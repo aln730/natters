@@ -58,28 +58,30 @@ func ParseCommand(line []byte, payloadReader func(int) ([]byte, error)) (*Comman
 		}, nil
 
 	case "UNSUB":
-		parts := bytes.Fields(line)
-		if len(parts) < 2 {
+		if len(parts) < 3 {
 			return nil, errors.New("invalid UNSUB")
 		}
 
-		sid, err := strconv.Atoi(string(parts[1]))
+		topic := string(parts[1])
+
+		sid, err := strconv.Atoi(string(parts[2]))
 		if err != nil {
 			return nil, errors.New("invalid SID")
 		}
 
 		max := 0
-		if len(parts) >= 3 {
-			max, err = strconv.Atoi(string(parts[2]))
+		if len(parts) >= 4 {
+			max, err = strconv.Atoi(string(parts[3]))
 			if err != nil {
 				return nil, errors.New("invalid max value")
 			}
 		}
 
 		return &Command{
-			Type: UNSUB,
-			SID:  sid,
-			Max:  max,
+			Type:  UNSUB,
+			Topic: topic,
+			SID:   sid,
+			Max:   max,
 		}, nil
 	case "PUB":
 		if len(parts) < 3 {
