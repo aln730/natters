@@ -13,63 +13,93 @@ const (
 	PING
 	PONG
 	SUB
+	UNSUB
 	PUB
 )
 
 type Command struct {
 	Type    CommandType
 	Topic   string
-	SID     string
+	SID     int
+	Max     int
 	Payload []byte
 }
 
 func ParseCommand(line []byte, payloadReader func(int) ([]byte, error)) (*Command, error) {
 	line = bytes.TrimSpace(line)
+	if len(line) == 0 {
+		return nil, errors.New("empty line")
+	}
 
-	switch {
-	case bytes.HasPrefix(line, []byte("PING")):
+	parts := bytes.Fields(line)
+	if len(parts) == 0 {
+		return nil, errors.New("empty command")
+	}
+
+	switch string(parts[0]) {
+	case "PING":
 		return &Command{Type: PING}, nil
-
-	case bytes.HasPrefix(line, []byte("PONG")):
+	case "PONG":
 		return &Command{Type: PONG}, nil
-
-	case bytes.HasPrefix(line, []byte("CONNECT")):
+	case "CONNECT":
 		return &Command{Type: CONNECT}, nil
-
-	case bytes.HasPrefix(line, []byte("SUB")):
-		parts := bytes.Fields(line)
+	case "SUB":
 		if len(parts) < 3 {
 			return nil, errors.New("invalid SUB command")
+		}
+		sid, err := strconv.Atoi(string(parts[2]))
+		if err != nil {
+			return nil, errors.New("invalid SUB SID")
 		}
 		return &Command{
 			Type:  SUB,
 			Topic: string(parts[1]),
-			SID:   string(parts[2]),
+			SID:   sid,
 		}, nil
 
-	case bytes.HasPrefix(line, []byte("PUB")):
+	case "UNSUB":
 		parts := bytes.Fields(line)
+		if len(parts) < 2 {
+			return nil, errors.New("invalid UNSUB")
+		}
+
+		sid, err := strconv.Atoi(string(parts[1]))
+		if err != nil {
+			return nil, errors.New("invalid SID")
+		}
+
+		max := 0
+		if len(parts) >= 3 {
+			max, err = strconv.Atoi(string(parts[2]))
+			if err != nil {
+				return nil, errors.New("invalid max value")
+			}
+		}
+
+		return &Command{
+			Type: UNSUB,
+			SID:  sid,
+			Max:  max,
+		}, nil
+	case "PUB":
 		if len(parts) < 3 {
 			return nil, errors.New("invalid PUB command")
 		}
-
 		topic := string(parts[1])
 		size, err := strconv.Atoi(string(parts[2]))
 		if err != nil {
-			return nil, errors.New("invalid payload size")
+			return nil, errors.New("invalid PUB payload size")
 		}
-
 		payload, err := payloadReader(size)
 		if err != nil {
 			return nil, err
 		}
-
 		return &Command{
 			Type:    PUB,
 			Topic:   topic,
 			Payload: payload,
 		}, nil
+	default:
+		return nil, errors.New("unknown command")
 	}
-
-	return nil, errors.New("unknown command")
 }

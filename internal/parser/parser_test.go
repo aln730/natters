@@ -14,7 +14,7 @@ func TestParseCommand(t *testing.T) {
 		payload     []byte
 		wantType    parser.CommandType
 		wantTopic   string
-		wantSID     string
+		wantSID     int
 		wantPayload []byte
 	}{
 		{
@@ -37,7 +37,7 @@ func TestParseCommand(t *testing.T) {
 			line:      []byte("SUB FOO 1\r\n"),
 			wantType:  parser.SUB,
 			wantTopic: "FOO",
-			wantSID:   "1",
+			wantSID:   1,
 		},
 		{
 			name:        "PUB",
@@ -46,6 +46,19 @@ func TestParseCommand(t *testing.T) {
 			wantType:    parser.PUB,
 			wantTopic:   "CodingChallenge",
 			wantPayload: []byte("Hello John!"),
+		},
+		{
+			name:     "UNSUB without max",
+			line:     []byte("UNSUB 1\r\n"),
+			wantType: parser.UNSUB,
+			wantSID:  1,
+		},
+		{
+			name:        "UNSUB with max",
+			line:        []byte("UNSUB 2 5\r\n"),
+			wantType:    parser.UNSUB,
+			wantSID:     2,
+			wantPayload: nil,
 		},
 	}
 
@@ -71,7 +84,7 @@ func TestParseCommand(t *testing.T) {
 				t.Errorf("got Topic %q, want %q", cmd.Topic, tt.wantTopic)
 			}
 			if cmd.SID != tt.wantSID {
-				t.Errorf("got SID %q, want %q", cmd.SID, tt.wantSID)
+				t.Errorf("got SID %d, want %d", cmd.SID, tt.wantSID)
 			}
 			if !bytes.Equal(cmd.Payload, tt.wantPayload) {
 				t.Errorf("got Payload %q, want %q", cmd.Payload, tt.wantPayload)
