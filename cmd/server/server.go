@@ -82,7 +82,7 @@ func handleClient(client *Client) {
 
 	info := map[string]interface{}{
 		"server_id":   "natters",
-		"version":     "1.0.24",
+		"version":     "1.02.4",
 		"go":          "go1.24.11",
 		"host":        "nixon.csh.rit.edu",
 		"port":        4222,
