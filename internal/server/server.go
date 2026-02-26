@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/aln730/natters/internal/parser"
 )
@@ -51,6 +52,17 @@ func Start(address string) {
 NATTERS SERVER v1.0.24
 Listening on ` + address + `
 `)
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+		count := 1
+		for range ticker.C {
+			msg := fmt.Sprintf("Auto message #%d", count)
+			publish("AUTO", []byte(msg))
+			fmt.Println("Published:", msg)
+			count++
+		}
+	}()
 
 	for {
 		conn, err := ln.Accept()
@@ -70,12 +82,11 @@ func handleClient(client *Client) {
 
 	info := map[string]interface{}{
 		"server_id":   "natters",
-		"version":     "1.0.24",
+		"version":     "1.02.4",
 		"go":          "go1.24.11",
-		"host":        "0.0.0.0",
+		"host":        "nixon.csh.rit.edu",
 		"port":        4222,
 		"max_payload": MaxPayload,
-		"proto":       1,
 	}
 
 	infoBytes, _ := json.Marshal(info)
