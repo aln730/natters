@@ -2,7 +2,6 @@ package server
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
@@ -80,17 +79,6 @@ func handleClient(client *Client) {
 	defer client.conn.Close()
 	clientAddr := client.conn.RemoteAddr().String()
 
-	info := map[string]interface{}{
-		"server_id":   "natters",
-		"version":     "1.02.4",
-		"go":          "go1.24.11",
-		"host":        "nixon.csh.rit.edu",
-		"port":        4222,
-		"max_payload": MaxPayload,
-	}
-
-	infoBytes, _ := json.Marshal(info)
-
 	// Send ASCII banner + info
 	banner := fmt.Sprintf(`
 	_        _______ __________________ _______  _______  _______ 
@@ -104,7 +92,8 @@ func handleClient(client *Client) {
 
 	NATTERS SERVER v1.0.24
 	Listening on nixon.csh.rit.edu
-	INFO %s`, infoBytes)
+	Owner: zxcv
+`)
 
 	client.write([]byte(banner + "\r\n"))
 
